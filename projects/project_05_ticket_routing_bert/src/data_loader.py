@@ -32,3 +32,42 @@ def load_ticket_data(
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
         raise KeyError(f"Missing required columns in CSV: {missing_cols}")
+    
+
+    df["combined_text"] = (
+        df[text_cols[0]].astype(str).str.strip()
+        + " . "
+        + df[text_cols[1]].astype(str).str.strip()
+    )
+
+    if drop_na:
+        df = df.dropna(subset=["combined_text", topic_col, subtopic_col])
+
+    if df[topic_col].value_counts().min() < 2:
+        raise ValueError(f"Not enough samples in some classes of '{topic_col}' to perform stratified split.")
+
+    n_classes = df[topic_col].nunique()
+    n_samples = len(df)
+
+    # If test_size is an int, check if it's >= n_classes
+    if isinstance(test_size, int):
+        if test_size < n_classes:
+            print(f"[WARN] test_size={test_size} < n_classes={n_classes}. Setting test_size=n_classes.")
+            test_size = n_classes
+        if test_size >= n_samples:
+            raise ValueError(f"test_size={test_size} is greater than total samples={n_samples}.")
+    elif isinstance(test_size, float):
+        # If test_size as a float would result in fewer samples than classes, adjust
+        if int(test_size * n_samples) < n_classes:
+            min_size = n_classes / n_samples + 0.01  # add small epsilon
+            print(f"[WARN] test_size={test_size} too small for n_classes={n_classes}. Setting test_size={min_size:.2f}.")
+            test_size = min_size
+
+    train_df, val_df = train_test_split(
+        df,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=df[topic_col],
+    )
+
+    return train_df, val_df

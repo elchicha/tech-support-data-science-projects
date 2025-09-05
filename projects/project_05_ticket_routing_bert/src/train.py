@@ -1,9 +1,16 @@
 import argparse
 import torch
 
+from .data_loader import load_ticket_data
+
+
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
+    # Load data
+    train_df, val_df = load_ticket_data(args.data_path)
+    print(f"Training samples: {len(train_df)}, Validation samples: {len(val_df)}")
 
 
 
