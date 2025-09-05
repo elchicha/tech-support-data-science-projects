@@ -1,3 +1,34 @@
+---
+
+## Running the Code
+
+### 1. From the Command Line
+
+Activate the virtual environment (if not already active):
+
+```sh
+source env/bin/activate
+```
+
+Run the training script as a module (recommended for correct imports):
+
+```sh
+python -m src.train --data_path data/raw/report1757107912186.csv
+```
+
+Replace the `--data_path` argument with your CSV file as needed.
+
+### 2. Debugging in VS Code
+
+1. Open the project folder in VS Code.
+2. Go to the Run & Debug panel (or press `F5`).
+3. Select the configuration named **Debug src.train as module**.
+4. Start debugging. You will be prompted for the data CSV path (e.g., `data/raw/report1757107912186.csv`).
+
+This configuration ensures that relative imports work correctly by running `src.train` as a module and setting the `PYTHONPATH`.
+
+---
+
 # Ticket Routing with BERT
 
 **Project goal**  
