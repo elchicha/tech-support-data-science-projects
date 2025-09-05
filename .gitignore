@@ -2,14 +2,16 @@
 __pycache__/
 *.py[cod]
 *.class
+*$py.class
 
 # Virtual environments
+.venv/
 venv/
 .env
 .env.*
 
 # Jupyter notebooks checkpoints
-.ipynp_checkpoints/
+.ipynb_checkpoints/
 
 # Model artefacts (large binaries)
 models/
@@ -21,3 +23,10 @@ models/
 
 # VS Code Settings
 .vscode/
+*.code-workspace
+
+# Data files you don’t want in the repo (large CSVs, model checkpoints)
+data/*.csv
+data/*.tsv
+data/*.json
+models/
