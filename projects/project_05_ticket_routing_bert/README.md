@@ -18,10 +18,40 @@ Replace the `--data_path` argument with your CSV file as needed.
 
 ### 2. Debugging in VS Code
 
-1. Open the project folder in VS Code.
-2. Go to the Run & Debug panel (or press `F5`).
-3. Select the configuration named **Debug src.train as module**.
-4. Start debugging. You will be prompted for the data CSV path (e.g., `data/raw/report1757107912186.csv`).
+You can create a local debug configuration in VS Code without uploading your settings to GitHub:
+
+1.  Open the project folder in VS Code.
+2.  Go to the Run & Debug panel (left sidebar, or press `Ctrl+Shift+D`).
+3.  Click "create a launch.json file" or the gear icon to open the configuration editor.
+4.  Choose "Python" as the environment.
+5.  Replace the generated configuration with:
+
+        ```json
+        {
+        	"version": "0.2.0",
+        	"configurations": [
+        		{
+        			"name": "Debug src.train as module",
+        			"type": "python",
+        			"request": "launch",
+        			"module": "src.train",
+        			"justMyCode": true,
+        			"env": {
+        				"PYTHONPATH": "${workspaceFolder}"
+        			},
+        			"args": [
+        				"--data_path",
+        				"data/raw/report1757107912186.csv"
+        			],
+        			"console": "integratedTerminal"
+        		}
+        	]
+        }
+        ```
+
+6.  Save the file. By default, it will be saved as `.vscode/launch.json` in your project folder. This file is local and will not be uploaded to GitHub unless you add it to your repository.
+
+**Tip:** To keep your debug configuration private, add `.vscode/launch.json` to your `.gitignore` file.
 
 This configuration ensures that relative imports work correctly by running `src.train` as a module and setting the `PYTHONPATH`.
 
