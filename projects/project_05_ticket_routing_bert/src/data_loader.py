@@ -43,31 +43,56 @@ def load_ticket_data(
     if drop_na:
         df = df.dropna(subset=["combined_text", topic_col, subtopic_col])
 
-    if df[topic_col].value_counts().min() < 2:
-        raise ValueError(f"Not enough samples in some classes of '{topic_col}' to perform stratified split.")
 
-    n_classes = df[topic_col].nunique()
-    n_samples = len(df)
 
-    # If test_size is an int, check if it's >= n_classes
-    if isinstance(test_size, int):
-        if test_size < n_classes:
-            print(f"[WARN] test_size={test_size} < n_classes={n_classes}. Setting test_size=n_classes.")
-            test_size = n_classes
-        if test_size >= n_samples:
-            raise ValueError(f"test_size={test_size} is greater than total samples={n_samples}.")
-    elif isinstance(test_size, float):
-        # If test_size as a float would result in fewer samples than classes, adjust
-        if int(test_size * n_samples) < n_classes:
-            min_size = n_classes / n_samples + 0.01  # add small epsilon
-            print(f"[WARN] test_size={test_size} too small for n_classes={n_classes}. Setting test_size={min_size:.2f}.")
-            test_size = min_size
 
-    train_df, val_df = train_test_split(
-        df,
-        test_size=test_size,
-        random_state=random_state,
-        stratify=df[topic_col],
-    )
+    # Step 1: Move all classes with only 1 sample to train set
+    class_counts = df[topic_col].value_counts()
+    single_sample_classes = class_counts[class_counts == 1].index.tolist()
+    multi_sample_df = df[~df[topic_col].isin(single_sample_classes)]
+    single_sample_df = df[df[topic_col].isin(single_sample_classes)]
+
+    # Step 2: Recursively move classes with <2 samples in the split set to train
+    while True:
+        split_class_counts = multi_sample_df[topic_col].value_counts()
+        too_few_classes = split_class_counts[split_class_counts < 2].index.tolist()
+        if not too_few_classes:
+            break
+        # Move these to train
+        to_move = multi_sample_df[multi_sample_df[topic_col].isin(too_few_classes)]
+        single_sample_df = pd.concat([single_sample_df, to_move], ignore_index=True)
+        multi_sample_df = multi_sample_df[~multi_sample_df[topic_col].isin(too_few_classes)]
+
+    if len(multi_sample_df) > 0:
+        n_classes = multi_sample_df[topic_col].nunique()
+        n_samples = len(multi_sample_df)
+
+        # If test_size is an int, check if it's >= n_classes
+        split_test_size = test_size
+        if isinstance(test_size, int):
+            if split_test_size < n_classes:
+                print(f"[WARN] test_size={test_size} < n_classes={n_classes}. Setting test_size=n_classes.")
+                split_test_size = n_classes
+            if split_test_size >= n_samples:
+                raise ValueError(f"test_size={test_size} is greater than total samples={n_samples}.")
+        elif isinstance(test_size, float):
+            if int(split_test_size * n_samples) < n_classes:
+                min_size = n_classes / n_samples + 0.01
+                print(f"[WARN] test_size={test_size} too small for n_classes={n_classes}. Setting test_size={min_size:.2f}.")
+                split_test_size = min_size
+
+        train_df, val_df = train_test_split(
+            multi_sample_df,
+            test_size=split_test_size,
+            random_state=random_state,
+            stratify=multi_sample_df[topic_col],
+        )
+    else:
+        # If all classes are single-sample, put all in train, val is empty
+        train_df, val_df = single_sample_df.copy(), df.iloc[0:0].copy()
+
+    # Always add single-sample and too-few-sample classes to the training set
+    if not single_sample_df.empty:
+        train_df = pd.concat([train_df, single_sample_df], ignore_index=True)
 
     return train_df, val_df
