@@ -1,5 +1,3 @@
----
-
 ## Running the Code
 
 ### 1. From the Command Line
