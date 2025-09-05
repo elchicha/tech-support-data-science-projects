@@ -30,3 +30,6 @@ data/*.csv
 data/*.tsv
 data/*.json
 models/
+*.csv
+*.tsv
+*.json
